@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package platform;
+
+option go_package="platform/platformpb";
+
+message ProductRequest {
+    string platform = 1;
+}
+
+message ProductResponse {
+    string name = 1;
+    string sku = 2;
+    float price = 3;
+    int32 categories = 4;
+    string type = 5;
+}
+
+service ProductService {
+    rpc GetProduct(ProductRequest) returns (ProductResponse) {}
+}
