@@ -44,6 +44,6 @@ rpc Average(stream AverageRequest) returns (AverageResponse) {}
     
 - Run:
 ```
-make run-server
-make run-client
+make run-calculator-server
+make run-calculator-client
 ```
