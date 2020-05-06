@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 const (
-	bigcommerceURL  = "https://api.bigcommerce.com/stores/jp6bmqxeb9/v3/catalog/products"
 	bigcommerceName = "bigcommerce"
 )
 
@@ -18,13 +18,11 @@ func (p *BigCommerce) Name() string {
 	return bigcommerceName
 }
 
-func (p *BigCommerce) Query(q string) (PlatformInfo, error) {
+func (p *BigCommerce) Get(api string) (PlatformInfo, error) {
 
-	fmt.Println("name platform", p.Name())
-
-	req, err := http.NewRequest("GET", bigcommerceURL, nil)
-	req.Header.Set("X-Auth-Client", "hyr8hgnlkx54l16gn95v74kkmgnm518")
-	req.Header.Set("X-Auth-Token", "d35jic4f6mxr59fsabmwuiguiss1yg2")
+	req, err := http.NewRequest("GET", api, nil)
+	req.Header.Set("X-Auth-Client", os.Getenv("CLIENT_ID"))
+	req.Header.Set("X-Auth-Token", os.Getenv("ACCESS_TOKEN_BIGCOMMERCE"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -52,7 +50,7 @@ type BigCommerceResult struct {
 		Name       string  `json:"name"`
 		Sku        string  `json:"sku"`
 		Price      float32 `json:"price"`
-		Categories []int32 `json:"categories"`
+		Categories []int32 `json:"categories,string"`
 		Type       string  `json:"type"`
 	} `json:"data"`
 }
@@ -83,6 +81,6 @@ func (r BigCommerceResult) getType() string {
 	return r.Data[0].Type
 }
 
-func (r BigCommerceResult) getCategories() int32 {
-	return r.Data[0].Categories[1]
+func (r BigCommerceResult) getCategories() []int32 {
+	return r.Data[0].Categories
 }

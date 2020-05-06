@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 const (
-	magentoURL  = "https://magento23demo.connectpos.com/rest/V1/products?searchCriteria[pageSize]=1"
 	magentoName = "magento"
 )
 
@@ -18,12 +18,10 @@ func (p *Magento) Name() string {
 	return magentoName
 }
 
-func (p *Magento) Query(q string) (PlatformInfo, error) {
+func (p *Magento) Get(api string) (PlatformInfo, error) {
 
-	fmt.Println("name platform", p.Name())
-
-	var bearer = "Bearer " + "ca3fokgt3anygnrlxx3ouk3ngguwagnj"
-	req, err := http.NewRequest("GET", magentoURL, nil)
+	var bearer = "Bearer " + os.Getenv("ACCESS_TOKEN_MAGENTO")
+	req, err := http.NewRequest("GET", api, nil)
 	req.Header.Add("Authorization", bearer)
 
 	client := &http.Client{}
@@ -50,11 +48,15 @@ func (p *Magento) Query(q string) (PlatformInfo, error) {
 
 type MagentoResult struct {
 	Items []struct {
-		Name       string  `json:"name"`
-		Sku        string  `json:"sku"`
-		Price      float32 `json:"price"`
-		Categories []int32 `json:"category_id"`
-		Type       string  `json:"type_id"`
+		Name                string  `json:"name"`
+		Sku                 string  `json:"sku"`
+		Price               float32 `json:"price"`
+		ExtensionAttributes struct {
+			CategoryLinks []struct {
+				CategoryID int32 `json:"category_id,string"`
+			} `json:"category_links"`
+		} `json:"extension_attributes"`
+		Type string `json:"type_id"`
 	} `json:"items"`
 }
 
@@ -84,6 +86,11 @@ func (r MagentoResult) getType() string {
 	return r.Items[0].Type
 }
 
-func (r MagentoResult) getCategories() int32 {
-	return r.Items[0].Categories[1]
+func (r MagentoResult) getCategories() []int32 {
+	var listCategory []int32
+	CategoryLinks := r.Items[0].ExtensionAttributes.CategoryLinks
+	for _, value := range CategoryLinks {
+		listCategory = append(listCategory, value.CategoryID)
+	}
+	return listCategory
 }

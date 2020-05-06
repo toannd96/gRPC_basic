@@ -12,7 +12,7 @@ message ProductResponse {
     string name = 1;
     string sku = 2;
     float price = 3;
-    int32 categories = 4;
+    repeated int32 categories = 4;
     string type = 5;
 }
 
