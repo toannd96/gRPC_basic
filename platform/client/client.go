@@ -31,8 +31,8 @@ func callGetProduct(p platformpb.ProductServiceClient) {
 	log.Println("[client run] calling get product api...")
 
 	req := platformpb.ProductRequest{
-		// Platform: bigcommerceName,
-		Platform: magentoName,
+		Platform: bigcommerceName,
+		// Platform: magentoName,
 	}
 	resp, err := p.GetProduct(context.Background(), &req)
 	if err != nil {

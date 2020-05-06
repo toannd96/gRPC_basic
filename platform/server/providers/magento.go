@@ -47,17 +47,23 @@ func (p *Magento) Get(api string) (PlatformInfo, error) {
 }
 
 type MagentoResult struct {
-	Items []struct {
-		Name                string  `json:"name"`
-		Sku                 string  `json:"sku"`
-		Price               float32 `json:"price"`
-		ExtensionAttributes struct {
-			CategoryLinks []struct {
-				CategoryID int32 `json:"category_id,string"`
-			} `json:"category_links"`
-		} `json:"extension_attributes"`
-		Type string `json:"type_id"`
-	} `json:"items"`
+	Item []Items `json:"items"`
+}
+
+type Items struct {
+	Name               string              `json:"name"`
+	Sku                string              `json:"sku"`
+	Price              float32             `json:"price"`
+	Type               string              `json:"type_id"`
+	ExtensionAttribute ExtensionAttributes `json:"extension_attributes"`
+}
+
+type ExtensionAttributes struct {
+	CategoryLink []CategoryLinks `json:"category_links"`
+}
+
+type CategoryLinks struct {
+	CategoryID int32 `json:"category_id,string"`
 }
 
 func (r MagentoResult) asPlatformInfo() PlatformInfo {
@@ -71,24 +77,24 @@ func (r MagentoResult) asPlatformInfo() PlatformInfo {
 }
 
 func (r MagentoResult) getName() string {
-	return r.Items[0].Name
+	return r.Item[0].Name
 }
 
 func (r MagentoResult) getSku() string {
-	return r.Items[0].Sku
+	return r.Item[0].Sku
 }
 
 func (r MagentoResult) getPrice() float32 {
-	return r.Items[0].Price
+	return r.Item[0].Price
 }
 
 func (r MagentoResult) getType() string {
-	return r.Items[0].Type
+	return r.Item[0].Type
 }
 
 func (r MagentoResult) getCategories() []int32 {
 	var listCategory []int32
-	CategoryLinks := r.Items[0].ExtensionAttributes.CategoryLinks
+	CategoryLinks := r.Item[0].ExtensionAttribute.CategoryLink
 	for _, value := range CategoryLinks {
 		listCategory = append(listCategory, value.CategoryID)
 	}

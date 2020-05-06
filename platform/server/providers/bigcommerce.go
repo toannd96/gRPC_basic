@@ -46,13 +46,15 @@ func (p *BigCommerce) Get(api string) (PlatformInfo, error) {
 }
 
 type BigCommerceResult struct {
-	Data []struct {
-		Name       string  `json:"name"`
-		Sku        string  `json:"sku"`
-		Price      float32 `json:"price"`
-		Categories []int32 `json:"categories,string"`
-		Type       string  `json:"type"`
-	} `json:"data"`
+	Data []Datas `json:"data"`
+}
+
+type Datas struct {
+	Name       string  `json:"name"`
+	Sku        string  `json:"sku"`
+	Price      float32 `json:"price"`
+	Categories []int32 `json:"categories,string"`
+	Type       string  `json:"type"`
 }
 
 func (r BigCommerceResult) asPlatformInfo() PlatformInfo {
