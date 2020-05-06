@@ -47,3 +47,16 @@ rpc Average(stream AverageRequest) returns (AverageResponse) {}
 make run-calculator-server
 make run-calculator-client
 ```
+
+## Platform api
+- Bao gồm các api sau:
+
+```
+rpc GetProduct(ProductRequest) returns (ProductResponse) {}
+```
+
+- Run:
+```
+make run-platform-server
+make run-platform-client
+```
