@@ -6,6 +6,7 @@ option go_package="platform/platformpb";
 
 message ProductRequest {
     string platform = 1;
+    string name = 2;
 }
 
 message ProductResponse {

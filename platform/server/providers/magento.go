@@ -3,13 +3,11 @@ package providers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
 )
 
 const (
-	magentoName = "magento"
+	magentoName    = "magento"
+	magentoBaseURL = "https://magento23demo.connectpos.com"
 )
 
 type Magento struct{}
@@ -18,30 +16,28 @@ func (p *Magento) Name() string {
 	return magentoName
 }
 
-func (p *Magento) Get(api string) (PlatformInfo, error) {
-
-	var bearer = "Bearer " + os.Getenv("ACCESS_TOKEN_MAGENTO")
-	req, err := http.NewRequest("GET", api, nil)
-	req.Header.Add("Authorization", bearer)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+func (p *Magento) Get(parameter string) (PlatformInfo, error) {
+	pathURL := fmt.Sprintf("%s%s", magentoBaseURL, parameter)
+	body, err := httpClient.getMagento(pathURL)
 	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if resp.StatusCode != 200 {
-		respErr := fmt.Errorf("Unexpected response: %s", resp.Status)
-		log.Fatalf("request failed: %v", respErr)
-	}
-
-	defer resp.Body.Close()
-
-	var result MagentoResult
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return PlatformInfo{}, err
 	}
+
+	var result MagentoResult
+	json.Unmarshal(body, &result)
+
+	return result.asPlatformInfo(), nil
+}
+
+func (p *Magento) Query(keyword string) (PlatformInfo, error) {
+	pathURL := fmt.Sprintf("%s/rest/V1/products?searchCriteria[filterGroups][0][filters][0][field]=name&searchCriteria[filterGroups][0][filters][0][value]=%s", magentoBaseURL, keyword)
+	body, err := httpClient.getMagento(pathURL)
+	if err != nil {
+		return PlatformInfo{}, err
+	}
+
+	var result MagentoResult
+	json.Unmarshal(body, &result)
 
 	return result.asPlatformInfo(), nil
 }
@@ -67,6 +63,10 @@ type CategoryLinks struct {
 }
 
 func (r MagentoResult) asPlatformInfo() PlatformInfo {
+	if len(r.Item) == 0 {
+		return PlatformInfo{}
+	}
+
 	return PlatformInfo{
 		Name:       r.getName(),
 		Sku:        r.getSku(),
@@ -94,9 +94,11 @@ func (r MagentoResult) getType() string {
 
 func (r MagentoResult) getCategories() []int32 {
 	var listCategory []int32
+
 	CategoryLinks := r.Item[0].ExtensionAttribute.CategoryLink
 	for _, value := range CategoryLinks {
 		listCategory = append(listCategory, value.CategoryID)
 	}
+
 	return listCategory
 }

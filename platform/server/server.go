@@ -7,6 +7,7 @@ import (
 	"grpc-learn/platform/server/providers"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/joho/godotenv"
 
@@ -35,15 +36,23 @@ type Server struct {
 }
 
 func (s *Server) GetProduct(ctx context.Context, req *platformpb.ProductRequest) (*platformpb.ProductResponse, error) {
-	log.Println("[server run] get product from platform", req.Platform)
+	log.Printf("[server run] get product from platform %s fetching product information for %s", req.Platform, req.Name)
 
 	providerName := req.GetPlatform()
-
+	productName := strings.Replace(req.GetName(), " ", "%20", -1)
 	var listResponse []providers.PlatformInfo
 
 	if providerName == s.bigCommerce.Name() {
-		bigcommerceAPI := "https://api.bigcommerce.com/stores/jp6bmqxeb9/v3/catalog/products"
-		response, err := s.bigCommerce.Get(bigcommerceAPI)
+		if productName == "" {
+			parameter := "/v3/catalog/products"
+			response, err := s.bigCommerce.Get(parameter)
+			if err != nil {
+				return nil, err
+			}
+			listResponse = append(listResponse, response)
+		}
+
+		response, err := s.bigCommerce.Query(productName)
 		if err != nil {
 			return nil, err
 		}
@@ -51,13 +60,22 @@ func (s *Server) GetProduct(ctx context.Context, req *platformpb.ProductRequest)
 	}
 
 	if providerName == s.magento.Name() {
-		magentoAPI := "https://magento23demo.connectpos.com/rest/V1/products?searchCriteria[pageSize]=1"
-		response, err := s.magento.Get(magentoAPI)
+		if productName == "" {
+			parameter := "/rest/V1/products?searchCriteria[pageSize]=1"
+			response, err := s.magento.Get(parameter)
+			if err != nil {
+				return nil, err
+			}
+			listResponse = append(listResponse, response)
+		}
+
+		response, err := s.magento.Query(productName)
 		if err != nil {
 			return nil, err
 		}
 		listResponse = append(listResponse, response)
 	}
+
 	return &platformpb.ProductResponse{
 		Name:       listResponse[0].Name,
 		Price:      listResponse[0].Price,
@@ -85,6 +103,6 @@ func listen() net.Listener {
 	if err != nil {
 		log.Fatalf("err while create listen %v", err)
 	}
-	log.Println("[PlatformServer] Listening on", port)
+	log.Println("[PlatformServer] listening on", port)
 	return conn
 }

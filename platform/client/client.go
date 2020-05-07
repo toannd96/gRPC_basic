@@ -29,14 +29,20 @@ func main() {
 
 func callGetProduct(p platformpb.ProductServiceClient) {
 	log.Println("[client run] calling get product api...")
-
 	req := platformpb.ProductRequest{
-		Platform: bigcommerceName,
-		// Platform: magentoName,
+		// Platform: bigcommerceName,
+		// Name:     "Configurable_mix full options_1001",
+		Platform: magentoName,
+		Name:     "Bag and strap",
 	}
+
 	resp, err := p.GetProduct(context.Background(), &req)
 	if err != nil {
 		log.Fatalf("request failed: %v", err)
+	}
+
+	if resp.GetName() == "" {
+		log.Fatal("product not found")
 	}
 	log.Println(resp)
 }

@@ -3,13 +3,11 @@ package providers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
 )
 
 const (
-	bigcommerceName = "bigcommerce"
+	bigcommerceName    = "bigcommerce"
+	bigcommerceBaseURL = "https://api.bigcommerce.com/stores/jp6bmqxeb9"
 )
 
 type BigCommerce struct{}
@@ -18,30 +16,29 @@ func (p *BigCommerce) Name() string {
 	return bigcommerceName
 }
 
-func (p *BigCommerce) Get(api string) (PlatformInfo, error) {
-
-	req, err := http.NewRequest("GET", api, nil)
-	req.Header.Set("X-Auth-Client", os.Getenv("CLIENT_ID"))
-	req.Header.Set("X-Auth-Token", os.Getenv("ACCESS_TOKEN_BIGCOMMERCE"))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+func (p *BigCommerce) Get(parameter string) (PlatformInfo, error) {
+	pathURL := fmt.Sprintf("%s%s", bigcommerceBaseURL, parameter)
+	body, err := httpClient.getBigCommerce(pathURL)
 	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if resp.StatusCode != 200 {
-		respErr := fmt.Errorf("Unexpected response: %s", resp.Status)
-		log.Fatalf("request failed: %v", respErr)
-	}
-
-	defer resp.Body.Close()
-
-	var result BigCommerceResult
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return PlatformInfo{}, err
 	}
+
+	var result BigCommerceResult
+	json.Unmarshal(body, &result)
+
+	return result.asPlatformInfo(), nil
+}
+
+func (p *BigCommerce) Query(keyword string) (PlatformInfo, error) {
+	queryURL := fmt.Sprintf("%s/v3/catalog/products?keyword=%s", bigcommerceBaseURL, keyword)
+	body, err := httpClient.getBigCommerce(queryURL)
+	if err != nil {
+		return PlatformInfo{}, err
+	}
+
+	var result BigCommerceResult
+	json.Unmarshal(body, &result)
+
 	return result.asPlatformInfo(), nil
 }
 
@@ -58,6 +55,10 @@ type Datas struct {
 }
 
 func (r BigCommerceResult) asPlatformInfo() PlatformInfo {
+	if len(r.Data) == 0 {
+		return PlatformInfo{}
+	}
+
 	return PlatformInfo{
 		Name:       r.getName(),
 		Sku:        r.getSku(),
